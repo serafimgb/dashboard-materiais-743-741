@@ -1,6 +1,4 @@
-# Dados sensíveis / arquivos Excel
-*.xlsx
-*.xls
+# Dados sensíveis / arquivos Excel (adicione aqui arquivos que NÃO devem ser publicados)
 *.csv
 
 # Python

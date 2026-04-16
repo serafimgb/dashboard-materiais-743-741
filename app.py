@@ -24,6 +24,7 @@ st.set_page_config(
 )
 
 st.markdown("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
     .main .block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 100%; overflow-x: hidden; }
     [data-testid="stPlotlyChart"] { overflow: hidden; }
@@ -50,10 +51,12 @@ st.markdown("""
         background: #2e7d32; color: white; padding: 8px 15px; border-radius: 6px;
         font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin: 15px 0 10px 0;
     }
+    .section-header i { margin-right: 7px; }
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
     [data-testid="stSidebar"] .stMarkdown h1,
     [data-testid="stSidebar"] .stMarkdown h2,
     [data-testid="stSidebar"] .stMarkdown h3 { color: #4CAF50; }
+    [data-testid="stSidebar"] .stMarkdown i { margin-right: 6px; }
     .dataframe { font-size: 0.8rem !important; }
     .refresh-indicator {
         background: #1a1a2e; border: 1px solid #4CAF50; border-radius: 8px;
@@ -115,32 +118,32 @@ def render_sidebar(df):
             st.image("logo_normatel.png", use_container_width=True)
         st.markdown("## Normatel Engenharia")
         st.markdown("---")
-        st.markdown("### ⚙️ Configurações")
-        auto_refresh = st.toggle("🔄 Auto-refresh (30s)", value=False)
+        st.markdown('<h3><i class="fa-solid fa-gear"></i> Configurações</h3>', unsafe_allow_html=True)
+        auto_refresh = st.toggle("Auto-refresh (30s)", value=False)
         if auto_refresh:
-            st.markdown('<div class="refresh-indicator">🟢 Atualizando a cada 30s</div>', unsafe_allow_html=True)
+            st.markdown('<div class="refresh-indicator"><i class="fa-solid fa-circle" style="color:#4CAF50;font-size:0.6rem;"></i> Atualizando a cada 30s</div>', unsafe_allow_html=True)
         st.markdown("---")
-        st.markdown("### 🔍 Filtros")
+        st.markdown('<h3><i class="fa-solid fa-sliders"></i> Filtros</h3>', unsafe_allow_html=True)
         if "DATAEMISSAO" in df.columns:
             min_date = df["DATAEMISSAO"].min()
             max_date = df["DATAEMISSAO"].max()
             if pd.notna(min_date) and pd.notna(max_date):
-                date_range = st.date_input("📅 Período", value=(min_date.date(), max_date.date()),
+                date_range = st.date_input("Período", value=(min_date.date(), max_date.date()),
                     min_value=min_date.date(), max_value=max_date.date())
             else:
                 date_range = None
         else:
             date_range = None
         bases = ["Todos"] + sorted(df["BASE"].dropna().unique().tolist())
-        selected_base = st.selectbox("🏢 Base/Agrupamento", bases)
+        selected_base = st.selectbox("Base / Agrupamento", bases)
         disciplinas = ["Todas"] + sorted(df["DISCIPLINA"].dropna().unique().tolist())
-        selected_disciplina = st.selectbox("📋 Disciplina", disciplinas)
+        selected_disciplina = st.selectbox("Disciplina", disciplinas)
         tipos = ["Todos"] + sorted(df["TIPO"].dropna().unique().tolist())
-        selected_tipo = st.selectbox("📦 Tipo de Material", tipos)
+        selected_tipo = st.selectbox("Tipo de Material", tipos)
         classificacoes = ["Todas"] + sorted(df["CLASSIFICAÇÃO DO MATERIAL"].dropna().unique().tolist())
-        selected_classif = st.selectbox("🏷️ Classificação", classificacoes)
+        selected_classif = st.selectbox("Classificação", classificacoes)
         fornecedores = ["Todos"] + sorted(df["NOMEFANTASIA"].dropna().unique().tolist())
-        selected_fornecedor = st.selectbox("🏭 Fornecedor", fornecedores)
+        selected_fornecedor = st.selectbox("Fornecedor", fornecedores)
         st.markdown("---")
         st.markdown(f"**Última atualização:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
         st.markdown(f"**Total de registros:** {len(df):,}")
@@ -179,7 +182,7 @@ def render_kpis(df, df_filtered):
 def render_row1(df_filtered):
     col1, col2, col3 = st.columns([4, 3, 3])
     with col1:
-        st.markdown('<div class="section-header">📦 TIPO DE MATERIAL</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-box"></i> TIPO DE MATERIAL</div>', unsafe_allow_html=True)
         tipo_data = df_filtered.groupby("TIPO").agg(
             QTD=("QUANTIDADE", "sum"), VALOR=("VALOR", "sum"), REGISTROS=("TIPO", "count")
         ).sort_values("QTD", ascending=True).tail(12)
@@ -198,7 +201,7 @@ def render_row1(df_filtered):
             xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        st.markdown('<div class="section-header">🏷️ CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-tag"></i> CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
         classif_data = df_filtered.groupby("CLASSIFICAÇÃO DO MATERIAL")["QUANTIDADE"].sum().sort_values(ascending=False)
         fig = go.Figure(data=[go.Pie(
             labels=classif_data.index, values=classif_data.values, hole=0.5,
@@ -211,7 +214,7 @@ def render_row1(df_filtered):
             showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(size=10)))
         st.plotly_chart(fig, use_container_width=True)
     with col3:
-        st.markdown('<div class="section-header">📋 DISCIPLINA</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-list"></i> DISCIPLINA</div>', unsafe_allow_html=True)
         disc_data = df_filtered.groupby("DISCIPLINA")["QUANTIDADE"].sum().sort_values(ascending=True)
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -229,7 +232,7 @@ def render_row1(df_filtered):
 def render_row2(df_filtered):
     col1, col2 = st.columns([6, 4])
     with col1:
-        st.markdown('<div class="section-header">📈 EVOLUÇÃO MENSAL</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-chart-line"></i> EVOLUÇÃO MENSAL</div>', unsafe_allow_html=True)
         monthly = df_filtered.groupby("MES").agg(
             QTD=("QUANTIDADE", "sum"), VALOR=("VALOR", "sum"), REGISTROS=("QUANTIDADE", "count")
         ).sort_index()
@@ -252,7 +255,7 @@ def render_row2(df_filtered):
         fig.update_yaxes(title_text="Valor (R$)", secondary_y=True, showgrid=False)
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        st.markdown('<div class="section-header">🏢 BASE / AGRUPAMENTO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-building"></i> BASE / AGRUPAMENTO</div>', unsafe_allow_html=True)
         base_data = df_filtered.groupby("BASE").agg(
             QTD=("QUANTIDADE", "sum"), VALOR=("VALOR", "sum"), REGISTROS=("BASE", "count")
         ).sort_values("QTD", ascending=False)
@@ -260,6 +263,7 @@ def render_row2(df_filtered):
             x=base_data.index, y=base_data["QTD"],
             marker_color=[COLORS["primary"], COLORS["secondary"]][:len(base_data)],
             text=base_data["QTD"].apply(lambda x: format_qty(x)), textposition="outside",
+            cliponaxis=False,
             hovertemplate="<b>%{x}</b><br>Quantidade: %{y:,.0f}<extra></extra>"
         )])
         fig.update_layout(height=380, margin=dict(l=10, r=10, t=50, b=80),
@@ -271,7 +275,7 @@ def render_row2(df_filtered):
 def render_row3(df_filtered):
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown('<div class="section-header">🏭 TOP 10 FORNECEDORES (VALOR)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-industry"></i> TOP 10 FORNECEDORES (VALOR)</div>', unsafe_allow_html=True)
         top_forn = df_filtered.groupby("NOMEFANTASIA")["VALOR"].sum().sort_values(ascending=False).head(10)
         labels = [n[:40] + "..." if len(n) > 40 else n for n in top_forn.index]
         fig = go.Figure()
@@ -288,7 +292,7 @@ def render_row3(df_filtered):
             font=dict(size=10), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        st.markdown('<div class="section-header">🌳 TREEMAP - TIPO × CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-sitemap"></i> TREEMAP — TIPO × CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
         tree_data = df_filtered.groupby(["TIPO", "CLASSIFICAÇÃO DO MATERIAL"])["VALOR"].sum().reset_index()
         tree_data = tree_data[tree_data["VALOR"] > 0]
         if not tree_data.empty:
@@ -301,7 +305,7 @@ def render_row3(df_filtered):
         else:
             st.info("Sem dados para exibir o Treemap.")
     with col3:
-        st.markdown('<div class="section-header">🔥 HEATMAP - DISCIPLINA × MÊS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-table-cells"></i> HEATMAP — DISCIPLINA × MÊS</div>', unsafe_allow_html=True)
         heat_data = df_filtered.pivot_table(index="DISCIPLINA", columns="MES",
             values="QUANTIDADE", aggfunc="sum", fill_value=0)
         if not heat_data.empty:
@@ -319,7 +323,7 @@ def render_row3(df_filtered):
 def render_row4(df_filtered):
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="section-header">📊 ANÁLISE DE PARETO - TOP 20 ITENS (VALOR)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-chart-bar"></i> ANÁLISE DE PARETO — TOP 20 ITENS (VALOR)</div>', unsafe_allow_html=True)
         pareto = df_filtered.groupby("DESCRIÇÃO")["VALOR"].sum().sort_values(ascending=False).head(20)
         cumulative = pareto.cumsum() / pareto.sum() * 100
         labels = [d[:50] + "..." if len(d) > 50 else d for d in pareto.index]
@@ -342,7 +346,7 @@ def render_row4(df_filtered):
         fig.update_yaxes(title_text="% Acumulado", secondary_y=True, range=[0, 105], showgrid=False)
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        st.markdown('<div class="section-header">📉 TENDÊNCIA DE GASTOS POR CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-chart-area"></i> TENDÊNCIA DE GASTOS POR CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
         trend = df_filtered.pivot_table(index="MES", columns="CLASSIFICAÇÃO DO MATERIAL",
             values="VALOR", aggfunc="sum", fill_value=0).sort_index()
         fig = go.Figure()
@@ -364,7 +368,7 @@ def render_row4(df_filtered):
 def render_row5(df_filtered):
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown('<div class="section-header">🎯 CONCENTRAÇÃO DE FORNECEDORES</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-bullseye"></i> CONCENTRAÇÃO DE FORNECEDORES</div>', unsafe_allow_html=True)
         forn_valor = df_filtered.groupby("NOMEFANTASIA")["VALOR"].sum().sort_values(ascending=False)
         total = forn_valor.sum()
         if total > 0:
@@ -394,7 +398,7 @@ def render_row5(df_filtered):
             | Total de fornecedores | **{len(forn_valor)}** |
             """)
     with col2:
-        st.markdown('<div class="section-header">📊 DISTRIBUIÇÃO DE VALORES POR PEDIDO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-chart-column"></i> DISTRIBUIÇÃO DE VALORES POR PEDIDO</div>', unsafe_allow_html=True)
         valor_data = df_filtered[df_filtered["VALOR"] > 0]["VALOR"]
         if not valor_data.empty:
             fig = go.Figure()
@@ -413,7 +417,7 @@ def render_row5(df_filtered):
                 yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
             st.plotly_chart(fig, use_container_width=True)
     with col3:
-        st.markdown('<div class="section-header">⚠️ TOP ITENS COM MAIOR VARIAÇÃO DE PREÇO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-triangle-exclamation"></i> TOP ITENS COM MAIOR VARIAÇÃO DE PREÇO</div>', unsafe_allow_html=True)
         multi_purchase = df_filtered[df_filtered["VALOR_UNITARIO"] > 0].groupby("DESCRIÇÃO").agg(
             COMPRAS=("VALOR_UNITARIO", "count"), PRECO_MIN=("VALOR_UNITARIO", "min"),
             PRECO_MAX=("VALOR_UNITARIO", "max"), PRECO_MEDIO=("VALOR_UNITARIO", "mean"),
@@ -435,10 +439,10 @@ def render_row5(df_filtered):
 
 
 def render_detail_table(df_filtered):
-    st.markdown('<div class="section-header">📋 DETALHAMENTO DE MATERIAIS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><i class="fa-solid fa-table"></i> DETALHAMENTO DE MATERIAIS</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([4, 2, 2])
     with col1:
-        search = st.text_input("🔍 Buscar descrição", placeholder="Digite para filtrar...")
+        search = st.text_input("Buscar descrição", placeholder="Digite para filtrar...")
     with col2:
         sort_by = st.selectbox("Ordenar por", ["DATAEMISSAO", "VALOR", "QUANTIDADE", "DESCRIÇÃO"])
     with col3:
@@ -470,7 +474,7 @@ def render_detail_table(df_filtered):
     st.markdown(f"**{len(display_df):,} registros exibidos**")
 
 def render_statistics(df_filtered):
-    st.markdown('<div class="section-header">📊 ANÁLISE ESTATÍSTICA</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><i class="fa-solid fa-square-poll-vertical"></i> ANÁLISE ESTATÍSTICA</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("**Estatísticas de Valor (R$)**")
@@ -514,21 +518,21 @@ def main():
     st.markdown(f"""
     <div class="main-header">
         {logo_html}
-        <h1>🏗️ UTILIZAÇÃO DE MATERIAIS | CONTRATO 4300682358 | RJ</h1>
+        <h1>UTILIZAÇÃO DE MATERIAIS | CONTRATO 4300682358 | RJ</h1>
         <p>Normatel Engenharia — Dashboard Analítico de Materiais e Equipamentos</p>
     </div>
     """, unsafe_allow_html=True)
     _default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "741 E 743_MATERIAIS - ABRIL.xlsx")
     FILE_PATH = os.environ.get("EXCEL_FILE", _default)
     if not os.path.exists(FILE_PATH):
-        st.error(f"⚠️ Arquivo não encontrado: **{FILE_PATH}**")
+        st.error(f"Arquivo não encontrado: **{FILE_PATH}**")
         st.info("""
         **Como configurar:**
         1. Coloque o arquivo Excel na mesma pasta do `app.py`
         2. Ou defina a variável de ambiente: `EXCEL_FILE=caminho/do/arquivo.xlsx`
         3. Ou altere a variável `FILE_PATH` no código
         """)
-        uploaded = st.file_uploader("📁 Ou faça upload do arquivo Excel", type=["xlsx", "xls"])
+        uploaded = st.file_uploader("Fazer upload do arquivo Excel", type=["xlsx", "xls"])
         if uploaded:
             FILE_PATH = "/tmp/uploaded_excel.xlsx"
             with open(FILE_PATH, "wb") as f:
@@ -542,7 +546,7 @@ def main():
         return
     df_filtered, auto_refresh = render_sidebar(df)
     if df_filtered.empty:
-        st.warning("⚠️ Nenhum dado encontrado com os filtros selecionados.")
+        st.warning("Nenhum dado encontrado com os filtros selecionados.")
         return
     render_kpis(df, df_filtered)
     render_row1(df_filtered)

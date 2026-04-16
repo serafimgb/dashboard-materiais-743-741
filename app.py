@@ -30,11 +30,13 @@ st.markdown("""
     [data-testid="stPlotlyChart"] { overflow: hidden; }
     .kpi-card {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        border-radius: 12px; padding: 20px; text-align: center;
-        border-left: 4px solid #4CAF50; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 10px;
+        border-radius: 12px; padding: 18px 12px; text-align: center;
+        border-left: 4px solid #4CAF50; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 10px; min-height: 110px; display: flex; flex-direction: column;
+        justify-content: center;
     }
-    .kpi-card h2 { color: #4CAF50; font-size: 2rem; margin: 0; font-weight: 700; }
-    .kpi-card p { color: #b0b0b0; font-size: 0.85rem; margin: 5px 0 0 0; text-transform: uppercase; letter-spacing: 1px; }
+    .kpi-card h2 { color: #4CAF50; font-size: 1.7rem; margin: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-card p { color: #b0b0b0; font-size: 0.75rem; margin: 6px 0 0 0; text-transform: uppercase; letter-spacing: 0.8px; line-height: 1.3; }
     .kpi-card-warn { border-left: 4px solid #FF9800; }
     .kpi-card-warn h2 { color: #FF9800; }
     .kpi-card-info { border-left: 4px solid #2196F3; }
@@ -204,14 +206,15 @@ def render_row1(df_filtered):
         st.markdown('<div class="section-header"><i class="fa-solid fa-tag"></i> CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
         classif_data = df_filtered.groupby("CLASSIFICAÇÃO DO MATERIAL")["QUANTIDADE"].sum().sort_values(ascending=False)
         fig = go.Figure(data=[go.Pie(
-            labels=classif_data.index, values=classif_data.values, hole=0.5,
+            labels=classif_data.index, values=classif_data.values, hole=0.6,
             marker_colors=COLORS["chart_palette"][:len(classif_data)],
-            textinfo="label+value", textfont_size=11,
+            textinfo="percent", textposition="inside", textfont_size=11,
+            insidetextorientation="radial",
             hovertemplate="<b>%{label}</b><br>Quantidade: %{value:,.0f}<br>Percentual: %{percent}<extra></extra>"
         )])
-        fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10),
+        fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=60),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(size=10)))
+            showlegend=True, legend=dict(orientation="h", yanchor="top", y=-0.05, font=dict(size=10)))
         st.plotly_chart(fig, use_container_width=True)
     with col3:
         st.markdown('<div class="section-header"><i class="fa-solid fa-list"></i> DISCIPLINA</div>', unsafe_allow_html=True)
@@ -326,22 +329,24 @@ def render_row4(df_filtered):
         st.markdown('<div class="section-header"><i class="fa-solid fa-chart-bar"></i> ANÁLISE DE PARETO — TOP 20 ITENS (VALOR)</div>', unsafe_allow_html=True)
         pareto = df_filtered.groupby("DESCRIÇÃO")["VALOR"].sum().sort_values(ascending=False).head(20)
         cumulative = pareto.cumsum() / pareto.sum() * 100
-        labels = [d[:50] + "..." if len(d) > 50 else d for d in pareto.index]
+        labels_short = [d[:25] + "..." if len(d) > 25 else d for d in pareto.index]
+        labels_full  = list(pareto.index)
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(go.Bar(
-            x=labels, y=pareto.values, name="Valor",
+            x=labels_short, y=pareto.values, name="Valor",
             marker_color=COLORS["primary"],
-            hovertemplate="<b>%{x}</b><br>Valor: R$ %{y:,.2f}<extra></extra>"
+            customdata=labels_full,
+            hovertemplate="<b>%{customdata}</b><br>Valor: R$ %{y:,.2f}<extra></extra>"
         ), secondary_y=False)
         fig.add_trace(go.Scatter(
-            x=labels, y=cumulative.values, name="% Acumulado",
+            x=labels_short, y=cumulative.values, name="% Acumulado",
             line=dict(color=COLORS["danger"], width=2), mode="lines+markers",
             hovertemplate="%{y:.1f}%<extra></extra>"
         ), secondary_y=True)
-        fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=120),
+        fig.update_layout(height=460, margin=dict(l=10, r=10, t=10, b=160),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
             legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            font=dict(size=10), xaxis=dict(tickangle=-45, showgrid=False))
+            font=dict(size=10), xaxis=dict(tickangle=-55, showgrid=False, automargin=True))
         fig.update_yaxes(title_text="Valor (R$)", secondary_y=False, showgrid=True, gridcolor="rgba(128,128,128,0.2)")
         fig.update_yaxes(title_text="% Acumulado", secondary_y=True, range=[0, 105], showgrid=False)
         st.plotly_chart(fig, use_container_width=True)
@@ -354,13 +359,13 @@ def render_row4(df_filtered):
             fig.add_trace(go.Scatter(
                 x=trend.index.astype(str), y=trend[col], name=col,
                 mode="lines+markers",
-                line=dict(width=2, color=COLORS["chart_palette"][i % len(COLORS["chart_palette"])]),
-                fill="tonexty" if i > 0 else "tozeroy",
+                line=dict(width=2.5, color=COLORS["chart_palette"][i % len(COLORS["chart_palette"])]),
+                marker=dict(size=5),
                 hovertemplate=f"<b>{col}</b><br>Mês: %{{x}}<br>Valor: R$ %{{y:,.2f}}<extra></extra>"
             ))
         fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            legend=dict(orientation="h", yanchor="bottom", y=-0.25, font=dict(size=10)),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.3, font=dict(size=10)),
             font=dict(size=11), xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
         st.plotly_chart(fig, use_container_width=True)
@@ -401,18 +406,25 @@ def render_row5(df_filtered):
         st.markdown('<div class="section-header"><i class="fa-solid fa-chart-column"></i> DISTRIBUIÇÃO DE VALORES POR PEDIDO</div>', unsafe_allow_html=True)
         valor_data = df_filtered[df_filtered["VALOR"] > 0]["VALOR"]
         if not valor_data.empty:
+            p95 = valor_data.quantile(0.95)
+            valor_plot = valor_data[valor_data <= p95]
+            mediana = valor_data.median()
+            media = valor_data.mean()
             fig = go.Figure()
             fig.add_trace(go.Histogram(
-                x=valor_data, nbinsx=50, marker_color=COLORS["primary"], opacity=0.7,
+                x=valor_plot, nbinsx=40, marker_color=COLORS["primary"], opacity=0.75,
                 hovertemplate="Faixa: R$ %{x:,.0f}<br>Frequência: %{y}<extra></extra>"
             ))
-            fig.add_vline(x=valor_data.median(), line_dash="dash", line_color=COLORS["warning"],
-                         annotation_text=f"Mediana: {format_brl(valor_data.median())}")
-            fig.add_vline(x=valor_data.mean(), line_dash="dot", line_color=COLORS["danger"],
-                         annotation_text=f"Média: {format_brl(valor_data.mean())}")
-            fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10),
+            fig.add_vline(x=min(mediana, p95), line_dash="dash", line_color=COLORS["warning"],
+                annotation_text=f"Mediana: {format_brl(mediana)}",
+                annotation_position="top right", annotation_font_size=11)
+            fig.add_vline(x=min(media, p95), line_dash="dot", line_color=COLORS["danger"],
+                annotation_text=f"Média: {format_brl(media)}",
+                annotation_position="top left", annotation_font_size=11)
+            fig.update_layout(height=400, margin=dict(l=10, r=10, t=40, b=10),
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                xaxis_title="Valor (R$)", yaxis_title="Frequência", font=dict(size=11),
+                xaxis_title=f"Valor (R$)  —  exibindo até percentil 95 ({format_brl(p95)})",
+                yaxis_title="Frequência", font=dict(size=11),
                 xaxis=dict(showgrid=False),
                 yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
             st.plotly_chart(fig, use_container_width=True)

@@ -1,0 +1,19 @@
+# Dados sensíveis / arquivos Excel
+*.xlsx
+*.xls
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db

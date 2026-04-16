@@ -25,7 +25,8 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .main .block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 100%; }
+    .main .block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 100%; overflow-x: hidden; }
+    [data-testid="stPlotlyChart"] { overflow: hidden; }
     .kpi-card {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         border-radius: 12px; padding: 20px; text-align: center;
@@ -115,10 +116,9 @@ def render_sidebar(df):
         st.markdown("## Normatel Engenharia")
         st.markdown("---")
         st.markdown("### ⚙️ Configurações")
-        auto_refresh = st.toggle("🔄 Auto-refresh (30s)", value=True)
+        auto_refresh = st.toggle("🔄 Auto-refresh (30s)", value=False)
         if auto_refresh:
             st.markdown('<div class="refresh-indicator">🟢 Atualizando a cada 30s</div>', unsafe_allow_html=True)
-            time.sleep(0.1)
         st.markdown("---")
         st.markdown("### 🔍 Filtros")
         if "DATAEMISSAO" in df.columns:
@@ -189,12 +189,13 @@ def render_row1(df_filtered):
             marker_color=COLORS["primary"],
             text=tipo_data["QTD"].apply(lambda x: format_qty(x)),
             textposition="outside",
+            cliponaxis=False,
             hovertemplate="<b>%{y}</b><br>Quantidade: %{x:,.0f}<extra></extra>"
         ))
-        fig.update_layout(height=400, margin=dict(l=10, r=60, t=10, b=10),
+        fig.update_layout(height=400, margin=dict(l=10, r=80, t=10, b=10),
             xaxis_title="Quantidade", plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)", font=dict(size=11),
-            xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
+            xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         st.markdown('<div class="section-header">🏷️ CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
@@ -216,11 +217,12 @@ def render_row1(df_filtered):
         fig.add_trace(go.Bar(
             y=disc_data.index, x=disc_data.values, orientation="h",
             marker_color=COLORS["secondary"], text=disc_data.values,
-            texttemplate="%{text:,.0f}", textposition="outside"
+            texttemplate="%{text:,.0f}", textposition="outside",
+            cliponaxis=False,
         ))
-        fig.update_layout(height=400, margin=dict(l=10, r=60, t=10, b=10),
+        fig.update_layout(height=400, margin=dict(l=10, r=80, t=10, b=10),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=11), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
+            font=dict(size=11), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -260,10 +262,10 @@ def render_row2(df_filtered):
             text=base_data["QTD"].apply(lambda x: format_qty(x)), textposition="outside",
             hovertemplate="<b>%{x}</b><br>Quantidade: %{y:,.0f}<extra></extra>"
         )])
-        fig.update_layout(height=380, margin=dict(l=10, r=10, t=10, b=40),
+        fig.update_layout(height=380, margin=dict(l=10, r=10, t=50, b=80),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=11), yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"),
-            xaxis=dict(tickangle=-15))
+            font=dict(size=11), yaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True),
+            xaxis=dict(tickangle=-15, automargin=True))
         st.plotly_chart(fig, use_container_width=True)
 
 def render_row3(df_filtered):
@@ -278,11 +280,12 @@ def render_row3(df_filtered):
             marker_color=COLORS["chart_palette"][:10][::-1],
             text=[format_brl(v) for v in top_forn.values[::-1]],
             textposition="outside",
+            cliponaxis=False,
             hovertemplate="<b>%{y}</b><br>Valor: R$ %{x:,.2f}<extra></extra>"
         ))
-        fig.update_layout(height=400, margin=dict(l=10, r=80, t=10, b=10),
+        fig.update_layout(height=400, margin=dict(l=10, r=100, t=10, b=10),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=10), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)"))
+            font=dict(size=10), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         st.markdown('<div class="section-header">🌳 TREEMAP - TIPO × CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
@@ -515,7 +518,8 @@ def main():
         <p>Normatel Engenharia — Dashboard Analítico de Materiais e Equipamentos</p>
     </div>
     """, unsafe_allow_html=True)
-    FILE_PATH = os.environ.get("EXCEL_FILE", "741 E 743_MATERIAIS - ABRIL.xlsx")
+    _default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "741 E 743_MATERIAIS - ABRIL.xlsx")
+    FILE_PATH = os.environ.get("EXCEL_FILE", _default)
     if not os.path.exists(FILE_PATH):
         st.error(f"⚠️ Arquivo não encontrado: **{FILE_PATH}**")
         st.info("""
@@ -555,8 +559,13 @@ def main():
         f"Atualizado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}</div>",
         unsafe_allow_html=True)
     if auto_refresh:
-        time.sleep(30)
-        st.rerun()
+        if "last_refresh" not in st.session_state:
+            st.session_state.last_refresh = time.time()
+        elapsed = time.time() - st.session_state.last_refresh
+        if elapsed >= 30:
+            st.session_state.last_refresh = time.time()
+            st.cache_data.clear()
+            st.rerun()
 
 
 if __name__ == "__main__":

@@ -295,31 +295,45 @@ def render_row3(df_filtered):
             font=dict(size=10), xaxis=dict(showgrid=True, gridcolor="rgba(128,128,128,0.2)", automargin=True))
         st.plotly_chart(fig, use_container_width=True)
     with col2:
-        st.markdown('<div class="section-header"><i class="fa-solid fa-sitemap"></i> TREEMAP — TIPO × CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><i class="fa-solid fa-circle-nodes"></i> DISTRIBUIÇÃO — TIPO × CLASSIFICAÇÃO</div>', unsafe_allow_html=True)
         tree_data = df_filtered.groupby(["TIPO", "CLASSIFICAÇÃO DO MATERIAL"])["VALOR"].sum().reset_index()
         tree_data = tree_data[tree_data["VALOR"] > 0]
         if not tree_data.empty:
-            fig = px.treemap(tree_data, path=["TIPO", "CLASSIFICAÇÃO DO MATERIAL"],
-                values="VALOR", color="VALOR", color_continuous_scale="Greens")
-            fig.update_layout(height=400, margin=dict(l=5, r=5, t=5, b=5),
-                font=dict(size=11), coloraxis_showscale=False)
-            fig.update_traces(hovertemplate="<b>%{label}</b><br>Valor: R$ %{value:,.2f}<extra></extra>")
+            fig = px.sunburst(
+                tree_data, path=["TIPO", "CLASSIFICAÇÃO DO MATERIAL"],
+                values="VALOR",
+                color="TIPO",
+                color_discrete_sequence=COLORS["chart_palette"],
+            )
+            fig.update_traces(
+                textinfo="label+percent entry",
+                hovertemplate="<b>%{label}</b><br>Valor: R$ %{value:,.2f}<br>%{percentEntry:.1%} do pai<extra></extra>",
+                insidetextorientation="radial",
+            )
+            fig.update_layout(height=400, margin=dict(l=5, r=5, t=5, b=5), font=dict(size=11))
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Sem dados para exibir o Treemap.")
+            st.info("Sem dados para exibir.")
     with col3:
         st.markdown('<div class="section-header"><i class="fa-solid fa-table-cells"></i> HEATMAP — DISCIPLINA × MÊS</div>', unsafe_allow_html=True)
         heat_data = df_filtered.pivot_table(index="DISCIPLINA", columns="MES",
             values="QUANTIDADE", aggfunc="sum", fill_value=0)
         if not heat_data.empty:
             heat_data = heat_data[sorted(heat_data.columns)]
+            # Normaliza por linha para cada disciplina ter sua própria escala
+            heat_norm = heat_data.div(heat_data.max(axis=1).replace(0, 1), axis=0)
+            x_labels = [c[2:] if len(c) == 7 else c for c in heat_data.columns.astype(str)]
             fig = go.Figure(data=go.Heatmap(
-                z=heat_data.values, x=[str(c) for c in heat_data.columns],
-                y=heat_data.index, colorscale="Greens",
-                hovertemplate="Disciplina: %{y}<br>Mês: %{x}<br>Quantidade: %{z:,.0f}<extra></extra>"
+                z=heat_norm.values,
+                x=x_labels,
+                y=heat_data.index,
+                customdata=heat_data.values,
+                colorscale=[[0, "#1a1a2e"], [0.01, "#1b4332"], [0.3, "#2d6a4f"], [0.7, "#52b788"], [1.0, "#95d5b2"]],
+                showscale=False,
+                hovertemplate="<b>%{y}</b><br>Mês: %{x}<br>Quantidade: %{customdata:,.0f}<extra></extra>"
             ))
-            fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10),
-                font=dict(size=10), xaxis=dict(tickangle=-45))
+            fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=60),
+                font=dict(size=10), xaxis=dict(tickangle=-45, side="bottom"))
             st.plotly_chart(fig, use_container_width=True)
 
 
